@@ -10,6 +10,7 @@ class App:
         self._display_surf = None
         self.size = self.weight, self.height = constants.APP_WIDTH, constants.APP_HEIGHT
         self.grid = []
+        self.stack = []
         self.current = None
 
     def on_init(self):
@@ -33,16 +34,44 @@ class App:
             self._running = False
 
     def on_loop(self):
+        # STEP 1
         self.current.visited = True
+        self.current.highlight(self._display_surf)
         next_neighbour =  self.current.checkNeighbors(self.grid, self.cols, self.rows)
-        if next_neighbour:
-           self.current = next_neighbour
+
+        if next_neighbour is not None:
+            print("NextNeighbour")
+            # STEP 2
+            self.stack.append(self.current)
+            # STEP 3
+            self.removeWalls(self.current, next_neighbour)
+            # STEP 4
+            self.current = next_neighbour
+        elif len(self.stack) > 0:
+            print("POPPING")
+            self.current = self.stack.pop()
+
+    def removeWalls(self, a, b):
+        x = a.i - b.i
+        if x == 1:
+            a.walls[3] = False
+            b.walls[1] = False
+        elif x == -1:
+            a.walls[1] = False
+            b.walls[3] = False
+        y = a.j - b.j
+        if y == 1:
+            a.walls[0] = False
+            b.walls[2] = False
+        elif y == -1:
+            a.walls[2] = False
+            b.walls[0] = False
 
 
     def on_render(self):
-        pygame.time.Clock().tick(5)
+        pygame.time.Clock().tick(constants.RENDER_SPEED)
         pygame.display.flip()
- 
+
     def on_cleaup(self):
         pygame.quit()
 
@@ -71,7 +100,7 @@ class Cell:
 
     def index(self, i, j, cols, rows):
         if (i < 0) or (j < 0) or (i > cols -1) or (j > rows -1):
-            print("Undefined")
+            #print("Undefined")
             return 0
         return i + j * cols
 
@@ -95,8 +124,10 @@ class Cell:
             return neighbours[r]
         else:
             return None
-
-
+    def highlight(self, surface):
+        x = self.i*constants.CELL_SIZE
+        y = self.j*constants.CELL_SIZE
+        pygame.draw.rect(surface, constants.COLOR_GREEN, (x, y, constants.CELL_SIZE, constants.CELL_SIZE), 0)
 
     def show(self, surface):
         x = self.i*constants.CELL_SIZE
